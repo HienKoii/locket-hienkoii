@@ -1,10 +1,7 @@
-import { Inter } from "next/font/google";
-import "../styles/globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import "../styles/globals.css";
 import Providers from "./providers";
-import { Box } from "@chakra-ui/react";
-
-const inter = Inter({ subsets: ["latin"] });
+import Header from "@/components/Header";
 
 export const metadata = {
   title: "Locket Uploader",
@@ -14,12 +11,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <Providers>
           <AuthProvider>
-            <Box pt="72px">
-              {children}
-            </Box>
+            <Header />
+            <>{children}</>
           </AuthProvider>
         </Providers>
       </body>

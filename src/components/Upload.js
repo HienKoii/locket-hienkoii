@@ -27,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { FiUpload } from "react-icons/fi";
-import { SketchPicker } from "react-color";
+import ColorPicker from "./ColorPicker";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 
@@ -78,10 +78,11 @@ const Upload = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
+
+    if (!user) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng chọn file để tải lên",
+        description: "Vui lòng đăng nhập để tải lên",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -89,10 +90,10 @@ const Upload = () => {
       return;
     }
 
-    if (!user) {
+    if (!file) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng đăng nhập để tải lên",
+        description: "Vui lòng chọn file để tải lên",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -120,12 +121,6 @@ const Upload = () => {
     uploadData.append("captionType", formData.captionType || "");
     uploadData.append("selectedBadge", formData.selectedBadge || "");
     uploadData.append("visibleTo", formData.visibleTo || "");
-
-    // Log toàn bộ formData
-    console.log("Form data entries:");
-    for (let [key, value] of uploadData.entries()) {
-      console.log(`${key}:`, value);
-    }
 
     try {
       const response = await axios.post("/api/upload", uploadData, {
@@ -265,7 +260,7 @@ const Upload = () => {
                   </PopoverTrigger>
                   <PopoverContent width="auto">
                     <PopoverBody p={0}>
-                      <SketchPicker color={formData.topColor} onChange={(color) => handleInputChange({ target: { name: "topColor", value: color.hex } })} />
+                      <ColorPicker color={formData.topColor} onChange={(color) => handleInputChange({ target: { name: "topColor", value: color.hex } })} />
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
@@ -283,7 +278,7 @@ const Upload = () => {
                   </PopoverTrigger>
                   <PopoverContent width="auto">
                     <PopoverBody p={0}>
-                      <SketchPicker color={formData.bottomColor} onChange={(color) => handleInputChange({ target: { name: "bottomColor", value: color.hex } })} />
+                      <ColorPicker color={formData.bottomColor} onChange={(color) => handleInputChange({ target: { name: "bottomColor", value: color.hex } })} />
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
@@ -301,14 +296,14 @@ const Upload = () => {
                   </PopoverTrigger>
                   <PopoverContent width="auto">
                     <PopoverBody p={0}>
-                      <SketchPicker color={formData.textColor} onChange={(color) => handleInputChange({ target: { name: "textColor", value: color.hex } })} />
+                      <ColorPicker color={formData.textColor} onChange={(color) => handleInputChange({ target: { name: "textColor", value: color.hex } })} />
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
               </HStack>
             </FormControl>
 
-            <FormControl>
+            {/* <FormControl>
               <FormLabel mb={0} minW="100px">
                 Loại caption:
               </FormLabel>
@@ -325,7 +320,7 @@ const Upload = () => {
                   </Radio>
                 </Stack>
               </RadioGroup>
-            </FormControl>
+            </FormControl> */}
 
             <FormControl>
               <FormLabel mb={0} minW="100px">
