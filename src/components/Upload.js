@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -24,18 +24,37 @@ import {
   RadioGroup,
   Radio,
   Stack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  ModalFooter,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { FiUpload } from "react-icons/fi";
 import ColorPicker from "./ColorPicker";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import ReactCrop from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 const Upload = () => {
   const { user } = useAuth();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [crop, setCrop] = useState({
+    unit: 'px',
+    width: 400,
+    height: 400,
+    x: 0,
+    y: 0
+  });
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const imgRef = useRef(null);
   const toast = useToast();
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
@@ -45,7 +64,7 @@ const Upload = () => {
     topColor: "",
     bottomColor: "",
     textColor: "",
-    captionType: "",
+    captionType: "static_content",
     selectedBadge: "",
     visibleTo: "",
   });
@@ -57,6 +76,11 @@ const Upload = () => {
     // Create preview URL
     const previewUrl = URL.createObjectURL(selectedFile);
     setPreview(previewUrl);
+
+    // Nếu là ảnh, hiển thị modal cắt ảnh
+    if (selectedFile.type.includes("image")) {
+      setShowCropModal(true);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -73,6 +97,7 @@ const Upload = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+      ...(name === "selectedBadge" && value ? { captionType: "static_content" } : {}),
     }));
   };
 
@@ -177,6 +202,65 @@ const Upload = () => {
     }
   };
 
+  const onCropComplete = (crop, pixelCrop) => {
+    if (imgRef.current && crop.width && crop.height) {
+      const canvas = document.createElement("canvas");
+      const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+      const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+      
+      // Sử dụng kích thước thực của ảnh
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext("2d");
+
+      // Thêm các thuộc tính để cải thiện chất lượng
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.drawImage(
+        imgRef.current,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        400,
+        400
+      );
+
+      // Chuyển đổi canvas thành blob với chất lượng cao
+      canvas.toBlob(
+        (blob) => {
+          const croppedImageUrl = URL.createObjectURL(blob);
+          setCroppedImage(croppedImageUrl);
+          setPreview(croppedImageUrl);
+
+          // Tạo file mới từ blob với chất lượng cao
+          const croppedFile = new File([blob], file.name, { 
+            type: file.type,
+            lastModified: new Date().getTime()
+          });
+          setFile(croppedFile);
+        },
+        file.type,
+        1.0 // Chất lượng tối đa (1.0 = 100%)
+      );
+    }
+  };
+
+  const handleCropClose = () => {
+    setShowCropModal(false);
+    setCrop(undefined);
+  };
+
+  const handleCropSave = () => {
+    if (crop) {
+      onCropComplete(crop);
+    }
+    setShowCropModal(false);
+  };
+
   return (
     <Container maxW="container.md" py={8}>
       <VStack spacing={8} align="stretch">
@@ -227,10 +311,51 @@ const Upload = () => {
           </Flex>
         </Box>
 
+        {/* Modal cắt ảnh */}
+        <Modal isOpen={showCropModal} onClose={handleCropClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Cắt ảnh</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              {preview && (
+                <ReactCrop
+                  crop={crop}
+                  onChange={(c) => setCrop(c)}
+                  aspect={1}
+                  minWidth={400}
+                  minHeight={400}
+                  maxWidth={400}
+                  maxHeight={400}
+                  locked={true}
+                >
+                  <img 
+                    ref={imgRef} 
+                    src={preview} 
+                    alt="Preview" 
+                    style={{ 
+                      maxWidth: "100%", 
+                      maxHeight: "70vh",
+                      objectFit: "contain"
+                    }} 
+                  />
+                </ReactCrop>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button colorScheme="blue" mr={3} onClick={handleCropSave}>
+                Lưu
+              </Button>
+              <Button variant="ghost" onClick={handleCropClose}>
+                Hủy
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
         <form onSubmit={handleSubmit}>
           <VStack spacing={4}>
             <FormControl>
-              <FormLabel>Caption:</FormLabel>
               <Textarea
                 name="caption"
                 value={formData.caption}

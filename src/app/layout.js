@@ -2,6 +2,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import "../styles/globals.css";
 import Providers from "./providers";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "Locket Uploader",
@@ -14,8 +15,11 @@ export default function RootLayout({ children }) {
       <body>
         <Providers>
           <AuthProvider>
-            <Header />
-            <>{children}</>
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+            </div>
           </AuthProvider>
         </Providers>
       </body>
